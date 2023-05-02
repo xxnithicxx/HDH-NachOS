@@ -91,7 +91,7 @@ BitMap::Test(int which)
 //	If no bits are clear, return -1.
 //----------------------------------------------------------------------
 
-int 
+int
 BitMap::Find() 
 {
     for (int i = 0; i < numBits; i++)

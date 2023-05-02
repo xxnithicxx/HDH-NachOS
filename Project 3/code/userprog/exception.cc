@@ -433,7 +433,7 @@ void ExceptionHandler(ExceptionType which)
             }
 
             delete[] filename;
-            printf("\n Error open file '%s", filename);
+            printf("\n Error open file %s", filename);
             machine->WriteRegister(2, -1);
             IncreasePC();
             return;
@@ -565,10 +565,10 @@ void ExceptionHandler(ExceptionType which)
             }
 
             int position = file->getPosition();
-            int trueByteWrite = file->Read(buffer, size);
+            int trueByteRead = file->Read(buffer, size);
 
             // In any file type, we allow user to all read
-            if (trueByteWrite < 0)
+            if (trueByteRead < 0)
             {
                 printf("\n Error read file");
                 machine->WriteRegister(2, -1);
@@ -578,13 +578,13 @@ void ExceptionHandler(ExceptionType which)
             }
 
             // Return the number of bytes read
-            if (trueByteWrite != 0)
-                if (position + trueByteWrite == file->Length())
+            if (trueByteRead != 0)
+                if (position + trueByteRead == file->Length())
                     // If we read to the end of file, return -2
-                    machine->WriteRegister(2, -2);
+                    machine->WriteRegister(2, file->Length());
                 else
                     // If we read normal file, return the number of bytes read
-                    machine->WriteRegister(2, trueByteWrite);
+                    machine->WriteRegister(2, trueByteRead);
             else
                 // If we read to the empty file, return -2
                 machine->WriteRegister(2, -2);
@@ -615,7 +615,8 @@ void ExceptionHandler(ExceptionType which)
 
             delete fileSystem->openList[fileID]; // Close file
             fileSystem->openList[fileID] = NULL; // Remove file from open list
-            machine->WriteRegister(2, 0);        // Return 0 if success
+
+            machine->WriteRegister(2, 0); // Return 0 if success
 
             IncreasePC();
             break;
@@ -980,6 +981,7 @@ void ExceptionHandler(ExceptionType which)
             */
             int pos = machine->ReadRegister(4);
             int fd = machine->ReadRegister(5);
+
             if (fd < 0 || fd >= MAX_OPEN_FILE || fileSystem->openList[fd] == NULL)
             {
                 gSynchConsole->Write("The file is not valid\n", 22);
@@ -991,6 +993,7 @@ void ExceptionHandler(ExceptionType which)
             {
                 // If the position is -1, then seek to the end of file
                 pos = (pos == -1) ? fileSystem->openList[fd]->Length() : pos;
+
                 // Check the position is valid or not
                 if (pos < 0 || pos > fileSystem->openList[fd]->Length())
                 {
@@ -1001,7 +1004,7 @@ void ExceptionHandler(ExceptionType which)
                 }
 
                 fileSystem->openList[fd]->Seek(pos);
-                machine->WriteRegister(2, 0);
+                machine->WriteRegister(2, pos);
                 IncreasePC();
                 break;
             }
@@ -1012,19 +1015,76 @@ void ExceptionHandler(ExceptionType which)
             /*
             Input: - The character we want to convert (char)
             Output: - The integer that user read (int)
+            Purpose: Convert a character to integer
             */
             char c = (char)machine->ReadRegister(4);
 
             if (c < '0' || c > '9')
             {
                 printf("\nCharacter is not valid: %d", c);
-                machine->WriteRegister(2, -1);
+                machine->WriteRegister(2, (int)c);
                 IncreasePC();
                 break;
             }
 
             int res = c - '0';
             machine->WriteRegister(2, res);
+            IncreasePC();
+            break;
+        }
+
+        case SC_Itoa:
+        {
+            /* 
+            Input: - The integer that user want to convert (int)
+            - The address of buffer user want to store the string (char*)
+            Output: - Number of characters in string (int)
+            Purpose: Convert an integer to string
+             */
+            int num = machine->ReadRegister(4);
+            int virAdd = machine->ReadRegister(5);
+
+            char *buffer = User2System(virAdd, MaxFileLength + 1);
+
+            if (buffer == NULL)
+            {
+                printf("\nNot enough memory in system");
+                machine->WriteRegister(2, -1);
+                IncreasePC();
+                break;
+            }
+
+            int length = 0;
+            int temp = num;
+            bool isNegative = false;
+
+            if (num < 0)
+            {
+                isNegative = true;
+                num = -num;
+            }
+
+            do
+            {
+                length++;
+                temp /= 10;
+            } while (temp != 0);
+
+            if (isNegative)
+            {
+                length++;
+                buffer[0] = '-';
+            }
+
+            for (int i = length - 1; i >= 0 + isNegative; i--)
+            {
+                buffer[i] = (num % 10) + '0';
+                num /= 10;
+            }
+
+            buffer[length] = '\0';
+            System2User(virAdd, length + 1, buffer);
+            machine->WriteRegister(2, length);
             IncreasePC();
             break;
         }

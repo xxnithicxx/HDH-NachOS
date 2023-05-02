@@ -1,17 +1,5 @@
 #include "syscall.h"
 
-#define MAX_FILE_LENGTH 32
-
-/* void main()
-{
-	int pingPID, pongPID;
-	PrintString("Ping-Pong test starting...\n\n");
-	pingPID = Exec("./test/ping");
-	pongPID = Exec("./test/pong");
-	Join(pingPID);
-	Join(pongPID);
-} */
-
 void main()
 {
 	SpaceId input, output, bottle, use;
@@ -19,25 +7,25 @@ void main()
 	char word;
 
 	// Create all semaphores to synchronize the processes
-	if (CreateSemaphore("main", 1) == -1)
+	if (CreateSemaphore("main", 0) == -1)
 	{
 		PrintString("CreateSemaphore input failed\n");
 		return;
 	}
 
-	if (CreateSemaphore("sinhvien", 1) == -1)
+	if (CreateSemaphore("sinhvien", 0) == -1)
 	{
 		PrintString("CreateSemaphore output failed\n");
 		return;
 	}
 
-	if (CreateSemaphore("voinuoc", 1) == -1)
+	if (CreateSemaphore("voinuoc", 0) == -1)
 	{
 		PrintString("CreateSemaphore bottle failed\n");
 		return;
 	}
 
-	if (CreateSemaphore("synSinhVien_VoiNuoc", 1) == -1)
+	if (CreateSemaphore("synSinhVien_VoiNuoc", 0) == -1)
 	{
 		PrintString("CreateSemaphore use failed\n");
 		return;
@@ -62,7 +50,7 @@ void main()
 
 	// Read number of try from input.txt
 	numberOfTry = 0;
-	while(1)
+	while (1)
 	{
 		Read(&word, 1, input);
 		if (word == '\n')
@@ -70,7 +58,10 @@ void main()
 			break;
 		}
 
-		numberOfTry = numberOfTry * 10 + Ctoi(word);
+		if (word >= '0' && word <= '9')
+		{
+			numberOfTry = numberOfTry * 10 + Ctoi(word);
+		}
 	}
 
 	if (Exec("./test/sinhvien") == -1)
@@ -86,7 +77,7 @@ void main()
 	}
 
 	// We loop until the number of try is 0
-	while (numberOfTry > 0)
+	while (numberOfTry--)
 	{
 		if (CreateFile("bottle.txt") == -1)
 		{
@@ -103,7 +94,7 @@ void main()
 		}
 
 		// Write the try list to bottle.txt
-		while(1)
+		while (1)
 		{
 			if (Read(&word, 1, input) < 1 || word == '\n')
 			{
@@ -129,13 +120,14 @@ void main()
 		}
 
 		// Write the result to output.txt
-		while(1)
+		while (1)
 		{
 			// Call sinhvien to write bottle volume to output.txt
 			if (Read(&word, 1, use) < 1)
 			{
-				Write("\r\n", 1, output);
+				Write("\r\n", 2, output);
 				Close(use);
+				Signal("synSinhVien_VoiNuoc");
 				break;
 			}
 

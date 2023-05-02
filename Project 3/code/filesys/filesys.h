@@ -38,7 +38,7 @@
 #include "copyright.h"
 #include "openfile.h"
 
-#define MAX_OPEN_FILE 10
+#define MAX_OPEN_FILE 15
 
 #ifdef FILESYS_STUB // Temporarily implement file system calls as
 // calls to UNIX, until the real file system
@@ -84,7 +84,11 @@ public:
 
 		if (fileDescriptor == -1)
 			return NULL;
-		return new OpenFile(fileDescriptor);
+
+		OpenFile *of = new OpenFile(fileDescriptor);
+		of->setName(name); 
+		
+		return of;
 	}
 
 	OpenFile *Open(char *name, int type)
@@ -93,7 +97,11 @@ public:
 
 		if (fileDescriptor == -1)
 			return NULL;
-		return new OpenFile(fileDescriptor, type);
+			
+		OpenFile *of = new OpenFile(fileDescriptor, type);
+		of->setName(name); 
+		
+		return of;
 	}
 
 	bool Remove(char *name) { return Unlink(name) == 0; }
@@ -106,6 +114,17 @@ public:
 			return FALSE;
 		Close(fileDescriptor);
 		return TRUE;
+	}
+
+	int SlotLeft()
+	{
+		int slot = 0;
+		for (int i = 0; i < MAX_OPEN_FILE; i++)
+			if (openList[i] == NULL)
+			{
+				slot++;
+			}
+		return slot;
 	}
 };
 
@@ -136,6 +155,8 @@ public:
 	void Print(); // List all the files and their contents
 
 	bool IsExist(char *name); // Check if a file is exist
+
+	int SlotLeft();				 // Return number of slot left in openList
 
 	OpenFile **openList; // List of open files (for easy access by id)
 

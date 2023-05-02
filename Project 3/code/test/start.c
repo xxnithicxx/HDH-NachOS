@@ -226,6 +226,14 @@ Ctoi:
 	j	$31
 	.end Ctoi
 
+	.globl Itoa
+	.ent	Itoa
+Itoa:
+	addiu $2,$0,SC_Itoa
+	syscall
+	j	$31
+	.end Itoa
+
 /* dummy function to keep gcc happy */
         .globl  __main
         .ent    __main

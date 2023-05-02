@@ -44,7 +44,6 @@ int PTable::ExecUpdate(char* name)
     //Gọi mutex->P(); để giúp tránh tình trạng nạp 2 tiến trình cùng 1 lúc.
 	bmsem->P();
 
-
     // Kiểm tra sự tồn tại của file name.
 	if(name == NULL)
 	{
@@ -52,6 +51,7 @@ int PTable::ExecUpdate(char* name)
 		bmsem->V();
 		return -1;
 	}
+
 	// So sánh tên chương trình và tên của currentThread để chắc chắn rằng chương trình này không gọi thực thi chính nó.
 	if( strcmp(name,"./test/scheduler") == 0 || strcmp(name,currentThread->getName()) == 0 )
 	{
@@ -111,10 +111,11 @@ int PTable::JoinUpdate(int id)
 	// When this process finish, we get exitcode of this process and return it
 	int exitCode = pcb[id]->GetExitCode();
 	pcb[id]->ExitRelease();
-
+ 
     // Successfully
 	return exitCode;
 }
+
 int PTable::ExitUpdate(int exitcode)
 {              
     // If the process is main process (), we halt the system

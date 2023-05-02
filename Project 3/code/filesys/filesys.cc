@@ -260,7 +260,7 @@ FileSystem::Open(char *name)
             }
     }
     delete directory;
-    return NULL;    // return NULL if not found
+    return NULL; // return NULL if not found
 }
 
 OpenFile *
@@ -284,7 +284,7 @@ FileSystem::Open(char *name, int type)
             }
     }
     delete directory;
-    return NULL;    // return NULL if not found
+    return NULL; // return NULL if not found
 }
 
 bool FileSystem::IsExist(char *name)
@@ -302,6 +302,17 @@ bool FileSystem::IsExist(char *name)
     }
     delete directory;
     return FALSE;
+}
+
+int FileSystem::SlotLeft()
+{
+    int slot = 0;
+    for (int i = 2; i < MAX_OPEN_FILE; i++)
+        if (openList[i] == NULL)
+        {
+            slot++;
+        }
+    return slot;
 }
 
 //----------------------------------------------------------------------

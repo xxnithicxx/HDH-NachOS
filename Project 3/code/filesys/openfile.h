@@ -75,6 +75,7 @@ public:
 	}
 
 	int type;
+	char *name;
 	OpenFile(int sector, int typet)
 	{
 		file = sector;
@@ -85,6 +86,11 @@ public:
 	int getPosition()
 	{
 		return currentOffset;
+	}
+
+	void setName(char *name)
+	{
+		this->name = name;
 	}
 
 private:
@@ -124,8 +130,14 @@ public:
 				  // end of file, tell, lseek back
 
 	int type; // 0: normal, 1: read-only
+	char *name;		  // Name of the file
 
 	int getPosition() { return seekPosition; }
+
+	void setName(char *name) { 
+		this->name = new char[strlen(name) + 1];
+		strcpy(this->name, name); 
+	}
 
 private:
 	FileHeader *hdr;  // Header for this file

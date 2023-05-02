@@ -43,6 +43,7 @@
 #define SC_Seek         20
 
 #define SC_Ctoi         21
+#define SC_Itoa         22
 
 #ifndef IN_ASM
 
@@ -153,6 +154,7 @@ int Signal(char* name);
 int Seek(int pos, OpenFileId id);
 
 int Ctoi(char str);
+int Itoa(int num, char* buffer);
 
 #endif /* IN_ASM */
 
