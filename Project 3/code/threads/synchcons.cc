@@ -106,8 +106,6 @@ SynchConsole::Read(char *into, int numBytes)
 
 	RLineBlock->P();				// Block for a read line
 
-//	printf("{%s}:\n",currentThread->getName());	// DEBUG print thread
-
 	while ( (loop < numBytes) && (eolncond == FALSE) )
 	{
 		do

@@ -2,53 +2,45 @@
 
 int main()
 {
-    SpaceId bottle, voinuoc;
+    SpaceId bottle, tap;
     char word;
     int length, fileCursor, haveBottle;
 
-    Signal("synSinhVien_VoiNuoc");
+    Signal("sinhvien_voinuoc");
     while(1)
     {
         // Wait for the main process to write bottle volume to file
         Wait("sinhvien");
-		// PrintString("\nWait sinhvien done");
-
-        if (CreateFile("use.txt") == -1)
-        {
-            PrintString("CreateFile use.txt failed\n");
-            Signal("main");
-            return;
-        }
-
-        if (CreateFile("tap.txt") == -1)
-        {
-            PrintString("CreateFile tap.txt failed\n");
-            Signal("main");
-            return;
-        }
 
         // Open file bottle.txt to read only
         bottle = Open("bottle.txt", 1);
         if (bottle == -1)
         {
             PrintString("Can not open file bottle.txt\n");
-            Signal("main");
+            Signal("scheduler");
             return;
         }
 
+        // Clear use.txt for the next use
+        if (CreateFile("use.txt") == -1)
+        {
+            PrintString("CreateFile use.txt failed\n");
+            return;
+        }
+
+        // Get length of file bottle.txt
+        Seek(0, bottle);
         length = Seek(-1, bottle);
         Seek(0, bottle);
         fileCursor = 0;
 
-		// PrintInt(length);
-
-		// Read voinuoc to write and read
-        voinuoc = Open("tap.txt", 0);
-        if (voinuoc == -1)
+		// Read tap to write and read
+        tap = Open("tap.txt", 0);
+        if (tap == -1)
         {
             PrintString("Can not open file tap.txt in SV\n");
 			Close(bottle);
-            Signal("main");
+            Signal("scheduler");
             return;
         }
 
@@ -60,7 +52,7 @@ int main()
             // Check if there is a bottle
             if (word != ' ')
             {
-                Write(&word, 1, voinuoc);
+                Write(&word, 1, tap);
             }
             else
             {
@@ -69,13 +61,13 @@ int main()
 
             if (fileCursor == length - 1)
             {
-                Write("\n", 1, voinuoc);
+                Write("\n", 1, tap);
                 haveBottle = 1;
             }
 
             if (haveBottle == 1)
             {
-                Close(voinuoc);
+                Close(tap);
                 Signal("voinuoc");
                 
                 // Wait for the main process to write bottle volume to file
@@ -86,17 +78,17 @@ int main()
                 {
                     PrintString("CreateFile tap.txt failed\n");
 					Close(bottle);
-                    Signal("main");
+                    Signal("scheduler");
                     return;
                 }
 
                 // Open file tap.txt to read and write
-                voinuoc = Open("tap.txt", 0);
-                if (voinuoc == -1)
+                tap = Open("tap.txt", 0);
+                if (tap == -1)
                 {
                     PrintString("Can not open file tap.txt in SV\n");
 					Close(bottle);
-                    Signal("main");
+                    Signal("scheduler");
                     return;
                 }
             }
@@ -105,6 +97,6 @@ int main()
         }
 
         Close(bottle);
-        Signal("main");
+        Signal("scheduler");
     }
 }

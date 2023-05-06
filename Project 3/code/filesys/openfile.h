@@ -33,6 +33,7 @@ public:
 	{
 		file = f;
 		currentOffset = 0;
+		type = 0;
 	}							 // open the file
 	~OpenFile() { Close(file); } // close the file
 
@@ -67,15 +68,14 @@ public:
 	}
 
 	// This function is temporary to build the system
-	int Seek(int pos)
+	void Seek(int pos)
 	{
 		Lseek(file, pos, 0);
-		currentOffset = Tell(file);
-		return currentOffset;
 	}
 
 	int type;
 	char *name;
+	
 	OpenFile(int sector, int typet)
 	{
 		file = sector;
@@ -90,7 +90,8 @@ public:
 
 	void setName(char *name)
 	{
-		this->name = name;
+		this->name = new char[strlen(name) + 1];
+		strcpy(this->name, name); 
 	}
 
 private:
@@ -129,8 +130,8 @@ public:
 				  // than the UNIX idiom -- lseek to
 				  // end of file, tell, lseek back
 
-	int type; // 0: normal, 1: read-only
-	char *name;		  // Name of the file
+	int type; 			// 0: normal, 1: read-only
+	char *name;		  	// Name of the file
 
 	int getPosition() { return seekPosition; }
 

@@ -7,7 +7,7 @@ void main()
 	char word;
 
 	// Create all semaphores to synchronize the processes
-	if (CreateSemaphore("main", 0) == -1)
+	if (CreateSemaphore("scheduler", 0) == -1)
 	{
 		PrintString("CreateSemaphore input failed\n");
 		return;
@@ -25,13 +25,31 @@ void main()
 		return;
 	}
 
-	if (CreateSemaphore("synSinhVien_VoiNuoc", 0) == -1)
+	if (CreateSemaphore("sinhvien_voinuoc", 0) == -1)
 	{
 		PrintString("CreateSemaphore use failed\n");
 		return;
 	}
 
-	CreateFile("output.txt");
+	// Create all the necessary files thoughtout the processes
+	if(CreateFile("output.txt") == -1)
+	{
+		PrintString("Create output.txt failed\n");
+		return;
+	}
+
+	if (CreateFile("tap.txt") == -1)
+	{
+		PrintString("CreateFile tap.txt failed\n");
+		return;
+	}
+
+	if (CreateFile("use.txt") == -1)
+	{
+		PrintString("CreateFile use.txt failed\n");
+		return;
+	}
+
 	// Open file output.txt to write and read
 	output = Open("output.txt", 0);
 	if (output == -1)
@@ -109,7 +127,7 @@ void main()
 
 		// Call sinhvien process to take the bottle and run
 		Signal("sinhvien");
-		Wait("main");
+		Wait("scheduler");
 
 		// When sinhvien process is done, we read the use from use.txt
 		use = Open("use.txt", 1);
@@ -127,13 +145,12 @@ void main()
 			{
 				Write("\r\n", 2, output);
 				Close(use);
-				Signal("synSinhVien_VoiNuoc");
+				Signal("sinhvien_voinuoc");
 				break;
 			}
 
 			// Write the result to output.txt next to the bottle volume
 			Write(&word, 1, output);
-			Write(" ", 1, output);
 		}
 	}
 

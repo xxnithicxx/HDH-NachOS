@@ -11,7 +11,7 @@ int main()
 	tap1 = tap2 = 0;
 	while (1)
 	{
-		Wait("synSinhVien_VoiNuoc");
+		Wait("sinhvien_voinuoc");
 
 		use = Open("use.txt", 0);
 		if (use == -1)
@@ -67,7 +67,7 @@ int main()
 					size = Itoa(volume, temp);
 
 					Write(temp, size, use);
-					Write("1 ", 2, use);
+					Write(" 1  ", 4, use);
 				}
 				else
 				{
@@ -76,7 +76,7 @@ int main()
 					size = Itoa(volume, temp);
 					
 					Write(temp, size, use);
-					Write("2 ", 2, use);
+					Write(" 2  ", 4, use);
 				}
 			}
 

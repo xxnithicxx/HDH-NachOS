@@ -54,10 +54,10 @@ public:
 		for (int i = 0; i < MAX_OPEN_FILE; i++)
 			openList[i] = NULL;
 
-		openList[0] = this->Open("stdin");
-		openList[1] = this->Open("stdout");    
-		this->Create("stdin", 0);
-		this->Create("stdout", 0);
+		openList[0] = this->Open("consolein");
+		openList[1] = this->Open("consoleout");    
+		this->Create("consolein", 0);
+		this->Create("consoleout", 0);
 	}
 
 	~FileSystem() {

@@ -263,6 +263,12 @@ void ExceptionHandler(ExceptionType which)
 
         case SC_Create:
         {
+            /*
+            Input: - User space address of the name of the file (char*)
+            Output: - 0 if success
+            - -1 if error
+            Purpose: Create a new file
+            */
             int virtAddr;
             char *filename;
 
@@ -301,58 +307,6 @@ void ExceptionHandler(ExceptionType which)
             return;
         }
 
-            /* case SC_Open:
-            {
-                // Input: - User space address of the name of the file (char*)
-                // Output: - File id that user can write and read (OpenFileId)
-                // Purpose: Open a file
-
-                int virtAddr;
-                char *filename;
-
-                // Get the name of the file
-                virtAddr = machine->ReadRegister(4);
-
-                // Copy the name from user space to kernel space
-                filename = User2System(virtAddr, MaxFileLength + 1); // MaxFileLength là = 32
-
-                if (filename == NULL)
-                {
-                    printf("\n Not enough memory in system");
-                    // If not enough memory, return -1
-                    machine->WriteRegister(2, -1);
-                    delete filename;
-                    IncreasePC();
-                    return;
-                }
-
-                for (int i = 2; i < MAX_OPEN_FILE; i++)
-                    if (fileSystem->openList[i] == NULL)
-                    {
-                        OpenFile *file = fileSystem->Open(filename); // Open file and add to openList
-
-                        if (file == NULL)
-                        {
-                            printf("\n Error open file '%s'", filename);
-                            machine->WriteRegister(2, -1);
-                            delete[] filename;
-                            IncreasePC();
-                            return;
-                        }
-
-                        machine->WriteRegister(2, i);
-                        delete[] filename;
-                        IncreasePC();
-                        return;
-                    }
-
-                delete[] filename;
-                printf("\n Error open file '%s'", filename);
-                machine->WriteRegister(2, -1);
-                IncreasePC();
-                return;
-            } */
-
         case SC_Open:
         {
             /*
@@ -382,7 +336,7 @@ void ExceptionHandler(ExceptionType which)
                 return;
             }
 
-            if (strcmp(filename, "stdin") == 0) // If file is stdin we return fileID = 0 with no type
+            if (strcmp(filename, "consolein") == 0) // If file is consolein we return fileID = 0 with no type
             {
                 machine->WriteRegister(2, 0);
                 delete[] filename;
@@ -390,7 +344,7 @@ void ExceptionHandler(ExceptionType which)
                 return;
             }
 
-            if (strcmp(filename, "stdout") == 0) // If file is stdout we return fileID = 1 with no type
+            if (strcmp(filename, "consoleout") == 0) // If file is consoleout we return fileID = 1 with no type
             {
                 machine->WriteRegister(2, 1);
                 delete[] filename;
@@ -457,7 +411,7 @@ void ExceptionHandler(ExceptionType which)
             // Copy the buffer from user space to kernel space
             buffer = User2System(virtAddr, size);
 
-            if (fileID < 1 || fileID >= MAX_OPEN_FILE) // Expect fileID = 0 (stdin)
+            if (fileID < 1 || fileID >= MAX_OPEN_FILE) // Expect fileID = 0 (consolein)
             {
                 printf("\n Error write file");
                 machine->WriteRegister(2, -1);
@@ -477,7 +431,7 @@ void ExceptionHandler(ExceptionType which)
                 return;
             }
 
-            if (fileID == 1) // Console output (stdout), this doesn't have type
+            if (fileID == 1) // Console output (consoleout), this doesn't have type
             {
                 int trueByteWrite = gSynchConsole->Write(buffer, size);
                 machine->WriteRegister(2, trueByteWrite);
@@ -524,7 +478,7 @@ void ExceptionHandler(ExceptionType which)
             /*
             Input:
             - User space address of the buffer (char*)
-            - Size of buffer (int)
+            - Number of bytes to read (int)
             - File id (OpenFileId)
             Output: No output
             Purpose: Read a buffer from a file
@@ -534,7 +488,7 @@ void ExceptionHandler(ExceptionType which)
             int fileID = machine->ReadRegister(6);
             char *buffer = new char[size];
 
-            if (fileID < 0 || fileID >= MAX_OPEN_FILE || fileID == 1) // Expect fileID = 0 (stdin)
+            if (fileID < 0 || fileID >= MAX_OPEN_FILE || fileID == 1) // Expect fileID = 1 (consoleout)
             {
                 printf("\n Error read file id");
                 machine->WriteRegister(2, -1);
@@ -554,7 +508,7 @@ void ExceptionHandler(ExceptionType which)
                 return;
             }
 
-            if (fileID == 0) // Console input (stdin), this doesn't have type
+            if (fileID == 0) // Console input (consolein), this doesn't have type
             {
                 int trueByteRead = gSynchConsole->Read(buffer, size);
                 System2User(virtAddr, trueByteRead, buffer);
@@ -580,7 +534,7 @@ void ExceptionHandler(ExceptionType which)
             // Return the number of bytes read
             if (trueByteRead != 0)
                 if (position + trueByteRead == file->Length())
-                    // If we read to the end of file, return -2
+                    // If we read to the end of file, return file size
                     machine->WriteRegister(2, file->Length());
                 else
                     // If we read normal file, return the number of bytes read
@@ -601,7 +555,7 @@ void ExceptionHandler(ExceptionType which)
             /*
             Input: - File id (OpenFileId)
             Output: - Error code (int)
-            Purpose: Close a file
+            Purpose: Close a file   
             */
             int fileID = machine->ReadRegister(4);
 
@@ -976,7 +930,7 @@ void ExceptionHandler(ExceptionType which)
             /*
             Input: - The position that user want to seek (int)
             - The file descriptor (int)
-            Output: No output
+            Output: Number of bytes that was seeked (int)
             Purpose: Seek the position of file
             */
             int pos = machine->ReadRegister(4);
@@ -991,11 +945,13 @@ void ExceptionHandler(ExceptionType which)
             }
             else
             {
+                OpenFile* file = fileSystem->openList[fd];
+
                 // If the position is -1, then seek to the end of file
-                pos = (pos == -1) ? fileSystem->openList[fd]->Length() : pos;
+                pos = (pos == -1) ? file->Length() : pos;
 
                 // Check the position is valid or not
-                if (pos < 0 || pos > fileSystem->openList[fd]->Length())
+                if (pos < 0 || pos > file->Length())
                 {
                     gSynchConsole->Write("The position is not valid\n", 26);
                     machine->WriteRegister(2, -1);
@@ -1003,7 +959,7 @@ void ExceptionHandler(ExceptionType which)
                     break;
                 }
 
-                fileSystem->openList[fd]->Seek(pos);
+                file->Seek(pos);
                 machine->WriteRegister(2, pos);
                 IncreasePC();
                 break;
